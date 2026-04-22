@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI情绪智能音乐系统</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a, #1e1b4b, #3b064d);
+      background-attachment: fixed;
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    #particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    #loading {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .loader {
+      width: 60px;
+      height: 60px;
+      border: 3px solid rgba(129, 140, 248, 0.2);
+      border-top-color: #818cf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .login {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.6s ease;
+    }
+    .login-box {
+      background: rgba(30, 41, 59, 0.65);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 44px 32px;
+      border-radius: 24px;
+      width: 100%; max-width: 460px;
+      box-shadow: 0 25px 70px rgba(0,0,0,0.4);
+    }
+    .title {
+      text-align: center;
+      font-size: 26px;
+      margin-bottom: 32px;
+      background: linear-gradient(90deg, #a78cf8, #60a5fa);
+      -webkit-background-clip: text;
+      color: transparent;
+      font-weight: 600;
+    }
+    .tab {
+      display: flex; gap: 12px; margin-bottom: 28px;
+    }
+    .tab-btn {
+      flex: 1; padding: 16px; border-radius: 14px; border: none;
+      background: rgba(74,72,78,0.3); color: #d1d5db;
+      transition: all 0.3s;
+    }
+    .tab-btn.active {
+      background: linear-gradient(90deg, #7c3aed, #4f46e5); color: white;
+    }
+    .form { display: none; }
+    .form.active { display: block; animation: fadeUp 0.4s ease; }
+    .input-group { margin-bottom: 22px; }
+    .input-group label {
+      display: block; margin-bottom: 8px; font-size: 14px; color: #e5e7eb;
+    }
+    input {
+      width: 100%; padding: 16px 18px; border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(15,23,42,0.5); color: white;
+      outline: none; transition: 0.3s;
+    }
+    input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.25);
+    }
+    .code-box { display: flex; gap: 10px; }
+    .code-btn {
+      padding: 16px 18px; border-radius: 14px;
+      background: linear-gradient(90deg, #7c3aed, #4f46e5);
+      color: white; border: none; white-space: nowrap;
+    }
+    .code-btn:disabled { background: #475569; }
+    .login-btn {
+      width: 100%; padding: 18px; border-radius: 14px;
+      background: linear-gradient(90deg, #7c3aed, #4f46e5);
+      color: white; font-size: 16px; border: none;
+      transition: 0.3s; margin-top: 10px;
+    }
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(124,58,237,0.3);
+    }
+    .tips { text-align: center; margin-top: 18px; font-size: 13px; color: #9ca3af; }
+    .success-tip { color: #4ade80; font-weight: 500; margin-top: 10px; text-align: center; }
+
+    .main {
+      display: none;
+      width: 100%; max-width: 1200px;
+      animation: fadeUp 0.6s ease;
+      position: relative;
+    }
+    .main-title {
+      text-align: center; font-size: 32px; margin: 10px 0 20px;
+      background: linear-gradient(90deg, #a78cf8, #60a5fa);
+      -webkit-background-clip: text; color: transparent;
+    }
+    .user-info {
+      text-align: center; margin-bottom: 16px;
+      font-size: 16px; color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .avatar-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #818cf8;
+    }
+    .panel {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;
+    }
+    .card {
+      background: rgba(30,41,59,0.55); backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 24px; border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+      transition: 0.3s;
+    }
+    .card:hover { transform: translateY(-4px); }
+    .card h3 { margin-bottom: 16px; font-size: 19px; color: #f3f4f6; }
+    video, canvas {
+      width: 100%; max-width: 400px; border-radius: 16px;
+      background: #0f172a; border: 1px solid rgba(255,255,255,0.1);
+    }
+    .emotion { font-size: 17px; margin: 14px 0; color: #fbbf24; font-weight: 500; }
+    
+    button {
+      padding: 12px 18px; border-radius: 12px;
+      background: linear-gradient(90deg, #7c3aed, #4f46e5);
+      color: white; border: none; transition: 0.3s; margin: 6px 0;
+      font-weight: 500; cursor: pointer;
+    }
+    button:hover { transform: translateY(-2px); }
+    button:disabled { background: #475569; transform: none; }
+    button.stop {
+      background: linear-gradient(90deg, #ef4444, #dc2626) !important;
+    }
+    .logout {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+      margin-bottom: 10px;
+    }
+
+    .favorite-btn {
+      background: #f59e0b;
+      margin-left: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .favorite-btn.active {
+      background: #ef4444;
+    }
+
+    .music-player {
+      background: rgba(30,41,59,0.55); backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 28px; border-radius: 20px;
+    }
+    .music-player h3 { font-size: 22px; margin-bottom: 16px; }
+    .music-info { font-size: 17px; margin-bottom: 12px; color: #e5e7eb; }
+    .song-name { font-size: 18px; color: #fff; font-weight: 500; margin-bottom: 10px; }
+    audio { width: 100%; border-radius: 12px; margin-bottom: 10px; }
+    #visualizer {
+      width: 100%; height: 70px;
+      display: flex; align-items: flex-end;
+      gap: 2px; padding: 8px 0;
+    }
+    .bar {
+      flex: 1; background: #818cf8; border-radius: 2px;
+      animation: upDown 0.3s ease infinite alternate;
+      opacity: 0.75;
+    }
+    @keyframes upDown {
+      from { height: 4px; } to { height: 60px; }
+    }
+    .status { font-size: 14px; color: #9ca3af; }
+
+    .playlist-container {
+      margin-top: 20px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+    .playlist-title {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #a78cf8;
+      font-weight: 500;
+    }
+    .song-item {
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 15px;
+    }
+    .song-item:hover {
+      background: rgba(129, 140, 248, 0.2);
+    }
+    .song-item.active {
+      background: rgba(129, 140, 248, 0.3);
+      border-left: 3px solid #818cf8;
+    }
+
+    .user-center {
+      position: fixed;
+      top: 0;
+      right: -450px;
+      width: 420px;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-left: 1px solid rgba(255,255,255,0.1);
+      padding: 30px;
+      z-index: 999;
+      transition: 0.4s ease;
+      overflow-y: auto;
+    }
+    .user-center.show {
+      right: 0;
+    }
+    .user-center-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .user-center-header h2 {
+      color: #a78cf8;
+    }
+    .close-user-center {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .user-profile {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .avatar-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 10px 0;
+    }
+    .avatar-option {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .avatar-option.active {
+      border-color: #818cf8;
+    }
+    .section {
+      margin-bottom: 25px;
+    }
+    .section h3 {
+      color: #818cf8;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    .history-list, .favorite-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .open-user-center {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #7c3aed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 100;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 768px) {
+      .panel { grid-template-columns: 1fr; }
+      .main-title { font-size: 26px; }
+      .user-center { width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+<canvas id="particles"></canvas>
+<div id="loading"><div class="loader"></div></div>
+
+<button class="open-user-center" onclick="openUserCenter()">👤</button>
+
+<div class="user-center" id="userCenter">
+  <div class="user-center-header">
+    <h2>用户中心</h2>
+    <button class="close-user-center" onclick="closeUserCenter()">×</button>
+  </div>
+  <div class="user-profile">
+    <img id="userAvatarBig" class="avatar-preview" style="width:80px;height:80px;" src="https://picsum.photos/id/64/200/200">
+    <h3 id="userNameShow" style="margin:10px 0;">用户名</h3>
+    <div class="avatar-group">
+      <img class="avatar-option" src="https://picsum.photos/id/64/200/200" onclick="setAvatar(this)">
+      <img class="avatar-option" src="https://picsum.photos/id/65/200/200" onclick="setAvatar(this)">
+      <img class="avatar-option" src="https://picsum.photos/id/91/200/200" onclick="setAvatar(this)">
+      <img class="avatar-option" src="https://picsum.photos/id/22/200/200" onclick="setAvatar(this)">
+      <img class="avatar-option" src="https://picsum.photos/id/54/200/200" onclick="setAvatar(this)">
+      <img class="avatar-option" src="https://picsum.photos/id/88/200/200" onclick="setAvatar(this)">
+    </div>
+    <div style="margin-top:15px;">
+      <input id="newUserName" placeholder="输入新昵称" style="padding:10px;border-radius:8px;width:70%;">
+      <button onclick="saveUserName()" style="padding:10px 14px;margin-left:5px;">保存</button>
+    </div>
+  </div>
+  <div class="section">
+    <h3>🎵 播放历史</h3>
+    <div class="history-list" id="historyList"></div>
+  </div>
+  <div class="section">
+    <h3>❤️ 我的收藏</h3>
+    <div class="favorite-list" id="favoriteList"></div>
+  </div>
+</div>
+
+<div class="login" id="loginPage">
+  <div class="login-box">
+    <h2 class="title">🧠 AI情绪智能音乐系统</h2>
+    <div class="tab">
+      <button class="tab-btn active" onclick="switchTab(1)">姓名+学号登录</button>
+      <button class="tab-btn" onclick="switchTab(2)">手机号+验证码</button>
+    </div>
+    <div class="form active" id="form1">
+      <div class="input-group"><label>姓名</label><input id="name" placeholder="请输入真实姓名"></div>
+      <div class="input-group"><label>学号</label><input id="stuId" placeholder="请输入真实学号"></div>
+      <div id="loginFeedback" class="success-tip" style="display: none;"></div>
+      <button class="login-btn" onclick="login1()">登录</button>
+    </div>
+    <div class="form" id="form2">
+      <div class="input-group"><label>手机号</label><input id="phone" placeholder="请输入手机号"></div>
+      <div class="input-group"><label>验证码</label>
+        <div class="code-box">
+          <input id="code" placeholder="验证码：1234">
+          <button class="code-btn" id="codeBtn" onclick="getCode()">获取验证码</button>
+        </div>
+      </div>
+      <button class="login-btn" onclick="login2()">登录</button>
+    </div>
+    <div class="tips">仅限2025级数学与应用数学1班学生登录使用</div>
+  </div>
+</div>
+
+<div class="main" id="mainPage">
+  <h1 class="main-title">AI面部情绪 + 语音双识别音乐系统</h1>
+  <div class="user-info">
+    <img id="topAvatar" class="avatar-preview" src="https://picsum.photos/id/64/200/200">
+    <span id="topName">欢迎您</span>
+  </div>
+  <button class="logout" onclick="logout()">退出登录</button>
+  
+  <div class="panel">
+    <div class="card">
+      <h3>📷 面部情绪识别</h3>
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="canvas"></canvas>
+      <div class="emotion" id="faceEmotion">等待开启摄像头</div>
+      <button id="camBtn" onclick="toggleCamera()">开启摄像头</button>
+    </div>
+
+    <div class="card">
+      <h3>🎤 语音情绪检测</h3>
+      <div class="emotion" id="voiceEmotion">等待开启麦克风</div>
+      <button id="micBtn" onclick="toggleMicrophone()">开启麦克风</button>
+      <div style="margin-top:10px; font-size:14px; color:#ccc;">说话可检测情绪：开心/悲伤/平静/愤怒</div>
+    </div>
+  </div>
+
+  <div class="music-player">
+    <h3>🎵 AI智能情绪歌单</h3>
+    <div class="music-info" id="musicInfo">情绪：未检测</div>
+    <div class="song-name" id="songName">歌曲名：未播放</div>
+    
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <audio id="audio" controls>
+      <button id="favoriteBtn" class="favorite-btn" onclick="toggleFavorite()">❤️ 收藏</button>
+    </div>
+
+    <div id="visualizer">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    </div>
+    <div class="status" id="status">系统准备中</div>
+
+    <div class="playlist-container">
+      <div class="playlist-title" id="playlistTitle">当前歌单：无</div>
+      <div id="playlistItems"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
+<script>
+const validStudents = {
+  "2521111001":"部景天","2521111002":"陈嘉祺","2521111003":"陈思昆","2521111004":"陈皖杭","2521111005":"陈文升","2521111006":"陈熙乐","2521111007":"揣欣桐","2521111008":"方双美","2521111009":"冯语涵","2521111010":"傅刚浩","2521111011":"龚美玲","2521111012":"胡锋","2521111013":"胡清辉","2521111014":"胡轾超","2521111015":"揭安","2521111016":"蓝嘉慧","2521111017":"李方宇","2521111018":"李熙晨","2521111019":"李佑","2521111020":"李雨婷","2521111021":"林煜恒","2521111022":"林喆鑫","2521111023":"刘金朋","2521111024":"刘颖","2521111025":"卢瑾洋","2521111026":"罗鑫哲","2521111027":"罗涌强","2521111028":"任孜涵","2521111029":"唐洁","2521111030":"唐钰涵","2521111031":"王冰铮","2521111032":"王浩然","2521111033":"王睿","2521111034":"王泽旭","2521111035":"魏苏菲","2521111036":"温靖","2521111037":"吴海涛","2521111038":"吴锦铭","2521111039":"吴怡静","2521111040":"吴优","2521111041":"吴展翼","2521111042":"吴子东","2521111043":"项晨晗","2521111044":"徐博涵","2521111045":"杨文锋","2521111046":"张成彦","2521111047":"赵祥睿","2521111048":"赵洋","2521111049":"郑俊鑫","2521111050":"郑立元","2521111051":"郑爽","2521111052":"周思鹏","2521111053":"冯时千","2521111054":"傅震煒","2521111057":"罗元茜","2521111059":"徐昕翘","2521111062":"曾慧嫻","2521111064":"颜以翔","2521111065":"梁禾铸","2521111066":"陈勇勋"
+};
+
+const songLibrary = {
+  happy: [
+    { name: "大风吹", url: "https://assets.mixkit.co/sfx/preview/mixkit-positive-epic-melodic-trance-254.mp3" },
+    { name: "快乐崇拜", url: "https://assets.mixkit.co/sfx/preview/mixkit-ethereal-fairy-win-sound-2029.mp3" },
+    { name: "阳光彩虹小白马", url: "https://assets.mixkit.co/sfx/preview/mixkit-positive-epic-melodic-trance-254.mp3" },
+  ],
+  sad: [
+    { name: "后来", url: "https://assets.mixkit.co/sfx/preview/mixkit-ambient-piano-loop-253.mp3" },
+    { name: "可惜没如果", url: "https://assets.mixkit.co/sfx/preview/mixkit-sad-piano-loop-255.mp3" },
+  ],
+  neutral: [
+    { name: "安静", url: "https://assets.mixkit.co/sfx/preview/mixkit-ambient-piano-loop-253.mp3" },
+    { name: "平凡之路", url: "https://assets.mixkit.co/sfx/preview/mixkit-ambient-sound-healing-waves-251.mp3" },
+  ],
+  angry: [
+    { name: "静心禅音", url: "https://assets.mixkit.co/sfx/preview/mixkit-ambient-meditation-sound-252.mp3" },
+    { name: "空灵放松", url: "https://assets.mixkit.co/sfx/preview/mixkit-ethereal-fairy-win-sound-2029.mp3" },
+  ],
+  fearful: [
+    { name: "安心曲", url: "https://assets.mixkit.co/sfx/preview/mixkit-ambient-meditation-sound-252.mp3" },
+    { name: "温柔抚慰", url: "https://assets.mixkit.co/sfx/preview/mixkit-ambient-sound-healing-waves-251.mp3" },
+  ],
+  disgusted: [
+    { name: "治愈旋律", url: "https://assets.mixkit.co/sfx/preview/mixkit-ambient-piano-loop-253.mp3" },
+    { name: "清新小调", url: "https://assets.mixkit.co/sfx/preview/mixkit-ethereal-fairy-win-sound-2029.mp3" },
+  ],
+  surprised: [
+    { name: "欢快节奏", url: "https://assets.mixkit.co/sfx/preview/mixkit-ethereal-fairy-win-sound-2029.mp3" },
+    { name: "轻松愉悦", url: "https://assets.mixkit.co/sfx/preview/mixkit-positive-epic-melodic-trance-254.mp3" },
+  ]
+};
+
+let codeTimer = null;
+let currentUser = { name: "", id: "" };
+let cameraStream = null;
+let micStream = null;
+let audioContext = null;
+let isCameraOn = false;
+let isMicOn = false;
+let isModelLoaded = false;
+let lastEmotion = "";
+let currentPlaylist = [];
+let currentSongIndex = 0;
+let currentSong = null;
+const audioEl = document.getElementById("audio");
+const videoEl = document.getElementById("video");
+const canvasEl = document.getElementById("canvas");
+
+let userData = JSON.parse(localStorage.getItem("userData")) || {
+  avatar: "https://picsum.photos/id/64/200/200",
+  name: "用户",
+  history: [],
+  favorites: []
+};
+
+window.onload = () => {
+  setTimeout(() => {
+    document.getElementById('loading').style.display = 'none';
+    initParticle();
+    refreshUserCenter();
+  }, 1000);
+};
+
+function initParticle() {
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  class Dot { constructor() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.r = Math.random() * 1.5; this.sx = Math.random() * 0.5 - 0.25; this.sy = Math.random() * 0.5 - 0.25; } }
+  let dots = Array.from({ length: 70 }, () => new Dot());
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    dots.forEach(d => { ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fillStyle = '#818cf840'; ctx.fill(); d.x += d.sx; d.y += d.sy; if (d.x < 0 || d.x > canvas.width) d.sx *= -1; if (d.y < 0 || d.y > canvas.height) d.sy *= -1; });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function openUserCenter() { document.getElementById("userCenter").classList.add("show"); refreshUserCenter(); }
+function closeUserCenter() { document.getElementById("userCenter").classList.remove("show"); }
+function setAvatar(img) {
+  document.querySelectorAll(".avatar-option").forEach(i => i.classList.remove("active"));
+  img.classList.add("active");
+  userData.avatar = img.src;
+  saveUserData();
+  refreshUserCenter();
+}
+function saveUserName() {
+  const val = document.getElementById("newUserName").value.trim();
+  if (val) { userData.name = val; saveUserData(); refreshUserCenter(); }
+}
+function saveUserData() { localStorage.setItem("userData", JSON.stringify(userData)); }
+function refreshUserCenter() {
+  document.getElementById("userAvatarBig").src = userData.avatar;
+  document.getElementById("userNameShow").textContent = userData.name;
+  document.getElementById("topAvatar").src = userData.avatar;
+  document.getElementById("topName").textContent = userData.name;
+  document.querySelectorAll(".avatar-option").forEach(i => {
+    i.classList.toggle("active", i.src === userData.avatar);
+  });
+  document.getElementById("historyList").innerHTML = userData.history.map((s,i)=>`<div class="song-item" onclick="playFavorite(${i})">${i+1}. ${s.name}</div>`).join("");
+  document.getElementById("favoriteList").innerHTML = userData.favorites.map((s,i)=>`<div class="song-item" onclick="playFavorite(${i},true)">${i+1}. ${s.name}</div>`).join("");
+}
+
+function addToHistory(song) {
+  if(!userData.history.some(s=>s.name===song.name)) {
+    userData.history.unshift(song);
+    if(userData.history.length>20) userData.history=userData.history.slice(0,20);
+    saveUserData();
+  }
+}
+function toggleFavorite() {
+  if(!currentSong) return;
+  const i=userData.favorites.findIndex(s=>s.name===currentSong.name);
+  if(i===-1) { userData.favorites.unshift(currentSong); } else { userData.favorites.splice(i,1); }
+  saveUserData();
+  refreshUserCenter();
+  updateFavBtn();
+}
+function updateFavBtn() {
+  const faved=currentSong && userData.favorites.some(s=>s.name===currentSong.name);
+  document.getElementById("favoriteBtn").classList.toggle("active",faved);
+}
+function playFavorite(i,isFav=false){
+  const song=isFav?userData.favorites[i]:userData.history[i];
+  currentSong=song;
+  audioEl.src=song.url;
+  audioEl.play().catch(err=>console.log(err));
+  document.getElementById("songName").textContent=`歌曲名：${song.name}`;
+  updateFavBtn();
+  closeUserCenter();
+}
+
+function switchTab(n){
+  document.querySelectorAll('.form').forEach(f=>f.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('form'+n).classList.add('active');
+  document.querySelectorAll('.tab-btn')[n-1].classList.add('active');
+}
+function getCode(){
+  const phone=document.getElementById('phone').value;
+  if(!phone||phone.length<11){alert("手机号不正确");return;}
+  const btn=document.getElementById('codeBtn');
+  btn.disabled=true;
+  let t=60;
+  codeTimer=setInterval(()=>{
+    t--; btn.textContent=t+"秒重发";
+    if(t<=0){clearInterval(codeTimer);btn.disabled=false;btn.textContent="获取验证码";}
+  },1000);
+  alert("验证码：1234");
+}
+function login1(){
+  const name=document.getElementById('name').value.trim();
+  const sid=document.getElementById('stuId').value.trim();
+  if(!name||!sid||!validStudents[sid]||validStudents[sid]!==name){
+    document.getElementById('loginFeedback').textContent="信息不正确";
+    document.getElementById('loginFeedback').style.color="#f87171";
+    document.getElementById('loginFeedback').style.display="block";
+    return;
+  }
+  currentUser={name,id:sid};
+  goMain();
+}
+function login2(){
+  if(document.getElementById('code').value!=="1234"){alert("验证码错误");return;}
+  currentUser={name:"访客",id:"guest"};
+  goMain();
+}
+function goMain(){
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('mainPage').style.display='block';
+  initSystem();
+}
+function logout(){location.reload();}
+
+async function toggleCamera(){
+  const btn=document.getElementById('camBtn');
+  const txt=document.getElementById('faceEmotion');
+  if(!isCameraOn){
+    try{
+      btn.disabled=true;
+      const stream=await navigator.mediaDevices.getUserMedia({video:true});
+      cameraStream=stream;
+      videoEl.srcObject=stream;
+      videoEl.onloadedmetadata=()=>{videoEl.play();faceapi.matchDimensions(canvasEl,videoEl);startFaceDetection();};
+      isCameraOn=true;
+      btn.textContent="关闭摄像头";
+      btn.classList.add("stop");
+    }catch(e){alert("请允许摄像头权限");}
+    finally{btn.disabled=false;}
+  }else{
+    cameraStream?.getTracks().forEach(t=>t.stop());
+    videoEl.srcObject=null;
+    isCameraOn=false;
+    btn.textContent="开启摄像头";
+    btn.classList.remove("stop");
+    txt.textContent="摄像头已关闭";
+  }
+}
+
+async function toggleMicrophone(){
+  const btn=document.getElementById('micBtn');
+  const txt=document.getElementById('voiceEmotion');
+  if(!isMicOn){
+    try{
+      btn.disabled=true;
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      micStream=stream;
+      isMicOn=true;
+      btn.textContent="关闭麦克风";
+      btn.classList.add("stop");
+      txt.textContent="麦克风已开启";
+      startVoiceDetection();
+    }catch(e){alert("请允许麦克风权限");}
+    finally{btn.disabled=false;}
+  }else{
+    micStream?.getTracks().forEach(t=>t.stop());
+    isMicOn=false;
+    btn.textContent="开启麦克风";
+    btn.classList.remove("stop");
+    txt.textContent="麦克风已关闭";
+  }
+}
+
+async function loadModels(){
+  document.getElementById('status').textContent="加载AI模型...";
+  const uri="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+  await faceapi.loadSsdMobilenetv1Model(uri);
+  await faceapi.loadFaceLandmarkModel(uri);
+  await faceapi.loadFaceExpressionModel(uri);
+  isModelLoaded=true;
+  document.getElementById('status').textContent="AI模型加载完成";
+}
+
+function startFaceDetection(){
+  async function detect(){
+    if(!isCameraOn||!videoEl.videoWidth){requestAnimationFrame(detect);return;}
+    const r=await faceapi.detectSingleFace(videoEl).withFaceExpressions();
+    if(r){
+      const top=Object.entries(r.expressions).sort((a,b)=>b[1]-a[1])[0][0];
+      document.getElementById('faceEmotion').textContent="面部情绪："+getEmotionText(top);
+      updateEmotion(top);
+    }
+    requestAnimationFrame(detect);
+  }
+  detect();
+}
+
+function startVoiceDetection(){
+  if(!audioContext)audioContext=new (window.AudioContext||window.webkitAudioContext)();
+  const a=audioContext.createAnalyser();
+  audioContext.createMediaStreamSource(micStream).connect(a);
+  a.fftSize=256;
+  const d=new Uint8Array(a.frequencyBinCount);
+  function check(){
+    if(!isMicOn)return;
+    a.getByteFrequencyData(d);
+    const avg=d.reduce((s,b)=>s+b,0)/d.length;
+    let e="neutral";
+    if(avg>60)e="angry";else if(avg>40)e="happy";else if(avg<15)e="sad";
+    document.getElementById('voiceEmotion').textContent="语音情绪："+getEmotionText(e);
+    updateEmotion(e);
+    requestAnimationFrame(check);
+  }
+  check();
+}
+
+function getEmotionText(e){
+  return{happy:"开心",sad:"悲伤",neutral:"平静",angry:"愤怒",fearful:"恐惧",disgusted:"厌恶",surprised:"惊讶"}[e]||"未知";
+}
+
+function updateEmotion(emo){
+  if(lastEmotion===emo)return;
+  lastEmotion=emo;
+  const list=[...songLibrary[emo]||songLibrary.neutral];
+  list.sort((a,b)=>a.name.localeCompare(b.name,'zh-CN'));
+  currentPlaylist=list;
+  currentSongIndex=0;
+  renderPlaylist(emo);
+  playSong(0);
+}
+
+function renderPlaylist(emo){
+  const c=document.getElementById('playlistItems');
+  document.getElementById('playlistTitle').textContent=`歌单：${getEmotionText(emo)}`;
+  c.innerHTML=currentPlaylist.map((s,i)=>`<div class="song-item" onclick="playSong(${i})">${i+1}. ${s.name}</div>`).join("");
+}
+
+function playSong(idx){
+  if(!currentPlaylist.length)return;
+  currentSongIndex=idx;
+  const song=currentPlaylist[idx];
+  currentSong=song;
+  audioEl.src=song.url;
+  audioEl.play().catch(err=>console.log("播放需要用户交互",err));
+  addToHistory(song);
+  document.getElementById('songName').textContent=`歌曲名：${song.name}`;
+  document.getElementById('musicInfo').textContent=`情绪：${getEmotionText(lastEmotion)}`;
+  document.getElementById('status').textContent=`正在播放：${song.name}`;
+  updateFavBtn();
+  document.querySelectorAll('.song-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+}
+
+function initSystem(){
+  loadModels();
+  updateEmotion("neutral");
+}
+</script>
+</body>
+</html></html>/html></html></html>
